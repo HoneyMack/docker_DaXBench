@@ -1,3 +1,7 @@
+# このリポジトリについて
+これは、[DaXBench](https://github.com/AdaCompNUS/DaXBench)と呼ばれる柔軟物を扱える微分可能シミュレータ環境を
+Dockerコンテナ上で構築するためのリポジトリです。
+
 # インストール方法
 ## Docker&Docker-composeのインストール
 公式サイトを確認してインストールしてください。
