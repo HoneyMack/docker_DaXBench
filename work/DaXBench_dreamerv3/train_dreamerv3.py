@@ -8,7 +8,7 @@ import gym
 
 # daxbenchの環境まわり
 from daxbench.core.envs import UnfoldCloth1Env
-from unfold_cloth_gymenv import UnfoldClothGymEnvConf
+from DaXBench_dreamerv3.daxbench_gymenv.unfold_cloth_gymenv import UnfoldClothGymEnvConf
 import json
 from argparse import ArgumentParser
 
@@ -61,10 +61,14 @@ def main():
     # print(config)
 
     daxbench_args = UnfoldClothGymEnvConf()
-    env = gym.make(daxbench_args.env, args=dedo_args)  # Replace this with your Gym #env.crafter.Env()
+    daxbench_args.batch_size = config.batch_size  # 環境(dacbench)で生成するbatch_sizeとdreamerv3側で生成するbatch_sizeを一致させる
+    # もしかしたら↑で動かないかも。そのときは↓を使う
+    # daxbench_args.batch_size = 1  # 各環境内部でのbatch_sizeは1　TODO:環境内でbatch化したほうが明らかに高速になるので、そうなるように改良
+
+    env = gym.make(daxbench_args.env, args=daxbench_args)  # Replace this with your Gym #env.crafter.Env()
     env = from_gym.FromGym(env, obs_key="image")  # Or obs_key='vector'.
     env = dreamerv3.wrap_env(env, config)
-    env = embodied.BatchEnv([env], parallel=False)
+    # env = embodied.BatchEnv([env], parallel=False)
 
     # pdb.set_trace()
     agent = dreamerv3.Agent(env.obs_space, env.act_space, step, config)
