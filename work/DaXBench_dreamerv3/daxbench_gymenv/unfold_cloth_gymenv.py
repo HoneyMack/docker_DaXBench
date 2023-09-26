@@ -51,12 +51,11 @@ class UnfoldClothGymEnvConf:
     env: str = "daxbench/unfoldClothGymEnv-v0"
     obs_type: str = "image"
     batch_size: int = 1
-    # screen_size: Tuple[int, int] = (128, 128)
-    screen_size: Tuple[int, int] = (64, 64)
+    screen_size: Tuple[int, int] = (128, 128)
     cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.8]), np.array([0.501, 0.5, 0]))
 
 
-@log_all_methods
+# @log_all_methods
 class UnfoldClothGymEnv(ClothEnv, GymEnv):
     metadata = {"render.modes": ["rgb_array"]}
 
@@ -144,7 +143,7 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
             state = init_state._replace(x=new_x)
             state = self.random_fold(state, key, step=2)
             self.state: ClothState = state
-            return self._get_obs(), state
+            return self._get_obs()
 
         return reset
 
@@ -162,7 +161,7 @@ if __name__ == "__main__":
 
     # リセット
     key = random.PRNGKey(0)
-    obs, state = env.reset(key)
+    obs = env.reset(key)
 
     for idx in range(1):
         actions = [env.action_space.sample() for _ in range(daxbench_args.batch_size)]
