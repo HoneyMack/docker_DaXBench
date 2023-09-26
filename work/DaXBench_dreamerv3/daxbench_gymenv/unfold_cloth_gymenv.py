@@ -83,6 +83,7 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         else:
             self.observation_space = rgb_obs
             
+        self.key = random.PRNGKey(conf.seed)
 
         self.state: ClothState = None
 
@@ -101,7 +102,7 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         obs, reward, done, info = self.step_diff(actions, self.state)
         # for _ in range(self.conf.calc_fps):
         #     _, reward, done, info = self.simulator.step_jax(self, actions, self.state)
-        #     self.state = info["state"]
+        self.state = info["state"]
         
 
         obs = self._get_obs()
@@ -156,11 +157,11 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
 
         def reset(key=None):
             if key is None:
-                key = random.PRNGKey(self.conf.seed)
-            key, _ = random.split(key)
-            new_x = init_state.x + random.normal(key, init_state.x.shape) * 0.0001
+                key = self.key
+            self.key, subkey = random.split(key)
+            new_x = init_state.x + random.normal(subkey, init_state.x.shape) * 0.0001
             state = init_state._replace(x=new_x)
-            state = self.random_fold(state, key, step=2)
+            state = self.random_fold(state,subkey, step=2)
             self.state: ClothState = state
             return self._get_obs()
 
