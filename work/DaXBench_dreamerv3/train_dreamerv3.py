@@ -24,7 +24,7 @@ def main():
     config = config.update(dreamerv3.configs["medium"])
     config = config.update(
         {
-            "logdir": "~/work/DaXBench/logdir/run3",
+            "logdir": "~/work/DaXBench/logdir/run8_rgbd",
             "run.train_ratio": 64,
             "run.log_every": 120,  # Seconds
             "batch_size": 8,
@@ -36,8 +36,8 @@ def main():
             "jax.train_devices": [1],
             "encoder.mlp_keys": "$^",
             "decoder.mlp_keys": "$^",
-            "encoder.cnn_keys": "image",
-            "decoder.cnn_keys": "image",
+            "encoder.cnn_keys": "image|rgb|depth",
+            "decoder.cnn_keys": "image|rgb|depth",
             # 'jax.platform': 'cpu',
         }
     )

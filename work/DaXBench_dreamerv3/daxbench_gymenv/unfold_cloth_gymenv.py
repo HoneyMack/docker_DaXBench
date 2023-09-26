@@ -52,7 +52,8 @@ class UnfoldClothGymEnvConf:
     obs_type: str = "image"
     batch_size: int = 1
     screen_size: Tuple[int, int] = (128, 128)
-    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.8]), np.array([0.501, 0.5, 0]))
+    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.7]), np.array([0.501, 0.5, 0]))
+    enable_depth: bool = True  # False
 
 
 # @log_all_methods
@@ -68,13 +69,21 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         self.conf = conf
 
         # observation_spaceの設定:RGB WxHxC
-        shape = (conf.screen_size[0], conf.screen_size[1], 3)
-        self.observation_space = gym.spaces.Box(
-            low=0,
-            high=255,
-            dtype=np.uint8,
-            shape=shape,
-        )
+        rgb_shape = (conf.screen_size[0], conf.screen_size[1], 3)
+        rgb_obs = gym.spaces.Box(
+                low=0,
+                high=255,
+                dtype=np.uint8,
+                shape=rgb_shape,
+            )
+        if conf.enable_depth:
+            d_shape = (conf.screen_size[0], conf.screen_size[1],1)
+            d_obs = gym.spaces.Box(dtype=np.float32,low=-1.0,high=1.0,shape=d_shape)
+            self.observation_space = gym.spaces.Dict({"rgb": rgb_obs, "depth": d_obs})
+        else:
+            self.observation_space = rgb_obs
+            
+
         self.state: ClothState = None
 
         self.reset = self.build_reset()
@@ -87,14 +96,14 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
 
     def step(self, actions):
         # actions = self.get_pnp_actions(actions, self.state)
+        if actions.ndim == 1: # 1次元用
+            actions = jnp.expand_dims(actions, axis=0)
         obs, reward, done, info = self.step_diff(actions, self.state)
         # for _ in range(self.conf.calc_fps):
         #     _, reward, done, info = self.simulator.step_jax(self, actions, self.state)
         #     self.state = info["state"]
 
         obs = self._get_obs()
-
-        obs = obs.squeeze()  # 1次元用
         reward = reward.squeeze()  # 1次元用
         done = done.squeeze()  # 1次元用
 
@@ -103,14 +112,21 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
     def _get_obs(self):
         # RBG画像を返す
         # TODO: バッチ処理にする
-        imgs = np.zeros((self.batch_size, self.conf.screen_size[0], self.conf.screen_size[1], 3), dtype=np.uint8)
+        rgbs = np.zeros((self.batch_size, self.conf.screen_size[0], self.conf.screen_size[1], 3), dtype=np.uint8)
+        depths = np.zeros((self.batch_size, self.conf.screen_size[0], self.conf.screen_size[1],1), dtype=np.float32)
+
         for idx in range(self.batch_size):
             rgb, depth = self.render(self.state, visualize=False)
-            imgs[idx] = rgb
+            rgbs[idx] = rgb
+            depths[idx] = np.expand_dims(depth,axis=-1)
 
-        imgs = imgs.squeeze()  # 1次元用
-
-        return imgs
+        rgbs = rgbs.squeeze()  # 1次元用
+        depths = depths.squeeze(axis=0)  # 1次元用
+        
+        if self.conf.enable_depth:
+            return {"rgb": rgbs, "depth": depths}
+        else:
+            return rgbs
 
     # エラー履かれたので、実装。意味は不明
     def create_cloth_mask(self, conf):
