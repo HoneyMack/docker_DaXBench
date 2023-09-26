@@ -13,6 +13,8 @@ from daxbench.core.envs.basic.cloth_env import ClothEnv
 from daxbench.core.engine.cloth_simulator import ClothState
 from daxbench.core.engine.pyrender.py_render import BasicPyRenderer
 
+from my_logger import log_all_methods
+
 import pathlib
 
 
@@ -49,10 +51,12 @@ class UnfoldClothGymEnvConf:
     env: str = "daxbench/unfoldClothGymEnv-v0"
     obs_type: str = "image"
     batch_size: int = 1
-    screen_size: Tuple[int, int] = (128, 128)
-    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 1.0]), np.array([0.5, 0.5, 0]))
+    # screen_size: Tuple[int, int] = (128, 128)
+    screen_size: Tuple[int, int] = (64, 64)
+    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.8]), np.array([0.501, 0.5, 0]))
 
 
+@log_all_methods
 class UnfoldClothGymEnv(ClothEnv, GymEnv):
     metadata = {"render.modes": ["rgb_array"]}
 
@@ -90,6 +94,11 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         #     self.state = info["state"]
 
         obs = self._get_obs()
+
+        obs = obs.squeeze()  # 1次元用
+        reward = reward.squeeze()  # 1次元用
+        done = done.squeeze()  # 1次元用
+
         return obs, reward, done, info
 
     def _get_obs(self):
@@ -99,6 +108,8 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         for idx in range(self.batch_size):
             rgb, depth = self.render(self.state, visualize=False)
             imgs[idx] = rgb
+
+        imgs = imgs.squeeze()  # 1次元用
 
         return imgs
 
@@ -125,7 +136,9 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
     def build_reset(self):
         init_state = self.simulator.reset_jax()
 
-        def reset(key):
+        def reset(key=None):
+            if key is None:
+                key = random.PRNGKey(self.conf.seed)
             key, _ = random.split(key)
             new_x = init_state.x + random.normal(key, init_state.x.shape) * 0.0001
             state = init_state._replace(x=new_x)
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     daxbench_args = UnfoldClothGymEnvConf()
     daxbench_args.batch_size = 3
     daxbench_args.cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.8]), np.array([0.501, 0.5, 0]))
-    print(daxbench_args.cam_pose)
+    # print(daxbench_args.cam_pose)
 
     env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, 15)
 
@@ -151,13 +164,13 @@ if __name__ == "__main__":
     key = random.PRNGKey(0)
     obs, state = env.reset(key)
 
-    for idx in range(10):
+    for idx in range(1):
         actions = [env.action_space.sample() for _ in range(daxbench_args.batch_size)]
         actions = jnp.array(actions)
         obs, reward, done, info = env.step(actions)
-        print("obs.shape:", obs.shape)
-        print("reward:", reward)
-        print("done:", done)
+        # print("obs.shape:", obs.shape)
+        # print("reward:", reward)
+        # print("done:", done)
 
         # 観測値を画像で出力
         save_file = file_dir.joinpath("figures", f"tmp{idx}.png")
