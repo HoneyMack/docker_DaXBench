@@ -52,7 +52,7 @@ class UnfoldClothGymEnvConf:
     obs_type: str = "image"
     batch_size: int = 1
     screen_size: Tuple[int, int] = (128, 128)
-    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.7]), np.array([0.501, 0.5, 0]))
+    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.45]), np.array([0.501, 0.5, 0]))
     enable_depth: bool = True  # False
 
 
@@ -102,8 +102,10 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         # for _ in range(self.conf.calc_fps):
         #     _, reward, done, info = self.simulator.step_jax(self, actions, self.state)
         #     self.state = info["state"]
+        
 
         obs = self._get_obs()
+        reward = info['real_reward'] #勾配を必要としないので直接の報酬をつかう
         reward = reward.squeeze()  # 1次元用
         done = done.squeeze()  # 1次元用
 
@@ -120,8 +122,9 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
             rgbs[idx] = rgb
             depths[idx] = np.expand_dims(depth,axis=-1)
 
-        rgbs = rgbs.squeeze()  # 1次元用
-        depths = depths.squeeze(axis=0)  # 1次元用
+        if self.batch_size == 1:
+            rgbs = rgbs.squeeze()  # 1次元用
+            depths = depths.squeeze(axis=0)  # 1次元用
         
         if self.conf.enable_depth:
             return {"rgb": rgbs, "depth": depths}
@@ -170,7 +173,8 @@ if __name__ == "__main__":
 
     daxbench_args = UnfoldClothGymEnvConf()
     daxbench_args.batch_size = 3
-    daxbench_args.cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.8]), np.array([0.501, 0.5, 0]))
+    daxbench_args.cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.4]), np.array([0.501, 0.5, 0]))
+    daxbench_args.enable_depth = False
     # print(daxbench_args.cam_pose)
 
     env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, 15)

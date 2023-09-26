@@ -24,9 +24,9 @@ def main():
     config = config.update(dreamerv3.configs["medium"])
     config = config.update(
         {
-            "logdir": "~/work/DaXBench/logdir/run8_rgbd",
+            "logdir": "~/work/DaXBench/logdir/run13_rgbd",
             "run.train_ratio": 64,
-            "run.log_every": 120,  # Seconds
+            "run.log_every": 60,  # Seconds
             "batch_size": 8,
             "batch_length": 16,  # 8,16　ならfloat16で動く,float32, 16,64 (xlargeだとfloat16は8,16で動かず8,8のほうがいいかもしれない)
             # "data_loaders": 1,  # 8
@@ -68,7 +68,7 @@ def main():
     daxbench_args.batch_size = 1  # 各環境内部でのbatch_sizeは1　TODO:環境内でbatch化したほうが明らかに高速になるので、そうなるように改良
 
     # env = gym.make(daxbench_args.env, args=daxbench_args)  # Replace this with your Gym #env.crafter.Env()
-    env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, 15)
+    env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, max_steps=50,aux_reward=True)
     env = from_gym.FromGym(env, obs_key="image")  # Or obs_key='vector'.
     env = dreamerv3.wrap_env(env, config)
     env = embodied.BatchEnv([env], parallel=False)
