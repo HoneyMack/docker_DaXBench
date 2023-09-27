@@ -12,6 +12,7 @@ from daxbench.core.envs import UnfoldCloth1Env
 from daxbench_gymenv.unfold_cloth_gymenv import UnfoldClothGymEnvConf, UnfoldClothGymEnv
 import json
 from argparse import ArgumentParser
+from dataclasses import asdict
 
 import pdb
 
@@ -24,7 +25,7 @@ def main():
     config = config.update(dreamerv3.configs["medium"])
     config = config.update(
         {
-            "logdir": "~/work/DaXBench/logdir/run13_rgbd",
+            "logdir": "~/work/DaXBench_dreamerv3/logdir/run21_rgbd",
             "run.train_ratio": 64,
             "run.log_every": 60,  # Seconds
             "batch_size": 8,
@@ -53,7 +54,7 @@ def main():
         [
             embodied.logger.TerminalOutput(),
             embodied.logger.JSONLOutput(logdir, "metrics.jsonl"),
-            embodied.logger.TensorBoardOutput(logdir),
+            embodied.logger.TensorBoardOutput(logdir,fps=2),
             # embodied.logger.WandBOutput(logdir.name, config),
             # embodied.logger.MLFlowOutput(logdir.name),
         ],
@@ -66,9 +67,15 @@ def main():
     # daxbench_args.batch_size = config.batch_size  # 環境(dacbench)で生成するbatch_sizeとdreamerv3側で生成するbatch_sizeを一致させる
     # もしかしたら↑で動かないかも。そのときは↓を使う
     daxbench_args.batch_size = 1  # 各環境内部でのbatch_sizeは1　TODO:環境内でbatch化したほうが明らかに高速になるので、そうなるように改良
+    
+    #各configを保存
+    config.save(logdir / "config_dreamerv3.json")
+    with open(logdir / "config_daxbench.json", "w") as f:
+        f.write(daxbench_args.to_json(indent=4, ensure_ascii=False))
+
 
     # env = gym.make(daxbench_args.env, args=daxbench_args)  # Replace this with your Gym #env.crafter.Env()
-    env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, max_steps=50,aux_reward=True)
+    env = UnfoldClothGymEnv(daxbench_args, daxbench_args.batch_size, max_steps=daxbench_args.max_steps,aux_reward=True)
     env = from_gym.FromGym(env, obs_key="image")  # Or obs_key='vector'.
     env = dreamerv3.wrap_env(env, config)
     env = embodied.BatchEnv([env], parallel=False)

@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, asdict
+from dataclasses_json import dataclass_json #以下を参照：https://1kara-hajimeru.com/2021/02/1691/
 from typing import Tuple
 
 import jax
@@ -20,7 +21,7 @@ import pathlib
 
 file_dir = pathlib.Path(__file__).parent.absolute()
 
-
+@dataclass_json
 @dataclass
 class UnfoldClothGymEnvConf:
     """
@@ -45,15 +46,16 @@ class UnfoldClothGymEnvConf:
     # 1:lesser memory, but faster
     # 2:much lesser memory but much slower
     task: str = "unfold_cloth_gymenv"
-    goal_path: str = file_dir.joinpath("goals", task, "goal.npy")
+    goal_path: str = str(file_dir.joinpath("goals", task, "goal.npy"))
     use_substep_obs: bool = False
 
     env: str = "daxbench/unfoldClothGymEnv-v0"
     obs_type: str = "image"
     batch_size: int = 1
     screen_size: Tuple[int, int] = (128, 128)
-    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.45]), np.array([0.501, 0.5, 0]))
+    cam_pose: np.ndarray = BasicPyRenderer.look_at(np.array([0.5, 0.5, 0.6]), np.array([0.501, 0.5, 0]))
     enable_depth: bool = True  # False
+    max_steps: int = 7
 
 
 # @log_all_methods
