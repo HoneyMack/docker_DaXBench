@@ -22,10 +22,11 @@ def main():
 
     # See configs.yaml for all options.
     config = embodied.Config(dreamerv3.configs["defaults"])
-    config = config.update(dreamerv3.configs["medium"])
+    # config = config.update(dreamerv3.configs["medium"])
+    config = config.update(dreamerv3.configs["large"])
     config = config.update(
         {
-            "logdir": "~/work/DaXBench_dreamerv3/logdir/run21_rgbd",
+            "logdir": "~/work/DaXBench_dreamerv3/logdir/run24_rgbd",
             "run.train_ratio": 64,
             "run.log_every": 60,  # Seconds
             "batch_size": 8,
@@ -39,6 +40,7 @@ def main():
             "decoder.mlp_keys": "$^",
             "encoder.cnn_keys": "image|rgb|depth",
             "decoder.cnn_keys": "image|rgb|depth",
+            #"run.from_checkpoint": "~/work/DaXBench_dreamerv3/logdir/run21_rgbd/checkpoint.ckpt",
             # 'jax.platform': 'cpu',
         }
     )
@@ -87,7 +89,7 @@ def main():
 
     with jax.transfer_guard("allow"):
         embodied.run.train(agent, env, replay, logger, args)
-    # embodied.run.eval_only(agent, env, logger, args)
+        #embodied.run.eval_only(agent, env, logger, args)
 
 
 if __name__ == "__main__":

@@ -45,37 +45,30 @@ def main(args: Args):
     
     # agentのconfigの設定
     config_dreamerv3 = embodied.Config.load(logdir/"config_dreamerv3.json")
-    #    config_dreamerv3 = embodied.Config(embodied.configs["defaults"])
-    #    config_dreamerv3 = config_dreamerv3.update(embodied.configs["medium"])
-    #    config_dreamerv3 = config_dreamerv3.update({
-    #          "logdir": logdir,
-    #    })
-
-    #    config_dreamerv3 = embodied.Flags(config_dreamerv3).parse()
 
     # 環境のconfigの設定
-    #    config_daxbench = UnfoldClothGymEnvConf()
-    #    config_daxbench.seed = config_dreamerv3.seed # seedを揃える
-    #    config_daxbench.batch_size = 1 # 環境内部でのbatch_sizeは1
     with open(logdir/"config_daxbench.json", "r") as f:
         conf = json.load(f)
         config_daxbench = UnfoldClothGymEnvConf(**conf)
         config_daxbench.cam_pose = np.array(config_daxbench.cam_pose) # listになってしまっているのでnumpyに変換
-        #config_daxbench: UnfoldClothGymEnvConf = UnfoldClothGymEnvConf.from_json(f.read())
    
     # 環境の作成
-    env = UnfoldClothGymEnv(config_daxbench, config_daxbench.batch_size, max_steps=5,aux_reward=True)
-    env = from_gym.FromGym(env, obs_key="image")  # Or obs_key='vector'.
+    env_original = UnfoldClothGymEnv(config_daxbench, config_daxbench.batch_size, max_steps=5,aux_reward=True)
+    env = from_gym.FromGym(env_original, obs_key="image")  # Or obs_key='vector'.
+    # with jax.transfer_guard("allow"):
+    #     obs = env.render()
     env = dreamerv3.wrap_env(env, config_dreamerv3)
     env = embodied.BatchEnv([env], parallel=False)
 
+    action = {"action": env_original.action_space.sample(),"reset":True}
+    obs = env.step(action)
     # agentの作成
     step = embodied.Counter()
     agent = dreamerv3.Agent(env.obs_space, env.act_space, step, config_dreamerv3)
 
+
     #動作
     eval_rgbs = np.zeros((args.eval_size, config_daxbench.max_steps, config_daxbench.screen_size[0], config_daxbench.screen_size[1], 3))
-    obs = env.render()
     with jax.transfer_guard("allow"):
         for eval_idx in range(args.eval_size):    
             for idx in range(5):

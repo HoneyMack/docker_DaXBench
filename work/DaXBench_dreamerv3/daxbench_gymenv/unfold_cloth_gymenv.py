@@ -121,7 +121,7 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
         depths = np.zeros((self.batch_size, self.conf.screen_size[0], self.conf.screen_size[1],1), dtype=np.float32)
 
         for idx in range(self.batch_size):
-            rgb, depth = self.render(self.state, visualize=False)
+            rgb, depth = ClothEnv.render(self,self.state, visualize=False)
             rgbs[idx] = rgb
             depths[idx] = np.expand_dims(depth,axis=-1)
 
@@ -169,6 +169,8 @@ class UnfoldClothGymEnv(ClothEnv, GymEnv):
 
         return reset
 
+    def render(self,mode):
+        return ClothEnv.render(self,self.state, visualize=False)
 
 # 単体テスト
 if __name__ == "__main__":
