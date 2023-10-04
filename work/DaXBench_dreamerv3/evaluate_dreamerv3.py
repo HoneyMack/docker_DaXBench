@@ -86,23 +86,23 @@ def main(args: Args):
         )
     )
     # 動作
+    action_reset = {
+        "action": env_original.action_space.sample().reshape(
+            (1, -1)
+        ),
+        "reset": np.array([True]),
+    }
     with jax.transfer_guard("allow"):
-        # 最初の1回目は何もせずにリセットする
-        action_reset = {
-            "action": env_original.action_space.sample().reshape(
-                (1, -1)
-            ),
-            "reset": np.array([True]),
-        }
-        obs = env.step(action_reset)
-
-        # 2回目以降は学習したpolicyに従って動作する
         for eval_idx in range(args.eval_size):
-            for idx in range(config_daxbench.max_steps):
+            # 最初の1回目は何もせずにリセットする
+            obs = env.step(action_reset)
+            eval_rgbs[eval_idx, 0] = obs["rgb"][0]
+            
+            # 2回目以降は学習したpolicyに従って動作する
+            for idx in range(1,config_daxbench.max_steps):
                 action, _ = agent.policy(obs, mode="eval")
                 action["reset"] = np.array([False])
                 obs = env.step(action)
-                
                 eval_rgbs[eval_idx, idx] = obs["rgb"][0]
 
     # 画像を保存
